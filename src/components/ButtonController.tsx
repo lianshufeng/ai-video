@@ -66,6 +66,10 @@ export function ButtonController({stream, elmentId}: VideoPreviewProps) {
             }
         }).catch(err => {
             console.error(err)
+            // 根据状态继续回调
+            if (inferenceStatus && handle == timerHandle) {
+                callApi(handle);
+            }
         });
     }
 
