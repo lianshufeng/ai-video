@@ -81,6 +81,7 @@ export function ButtonController({stream, elmentId}: VideoPreviewProps) {
 
         // 开始推理
         if (inferenceStatus) {
+            btnText.innerText = '停止推理'
             //定时器
             timerHandle = setInterval(() => {
                 const canvas = document.createElement('canvas');
@@ -102,15 +103,13 @@ export function ButtonController({stream, elmentId}: VideoPreviewProps) {
 
             //开始调用api
             callApi(timerHandle);
-
-            btnText.innerText = '停止推理'
         } else {
+            btnText.innerText = '开始推理'
             //停止调度器
             if (timerHandle && timerHandle != 0) {
                 clearInterval(timerHandle);
                 timerHandle = 0;
             }
-            btnText.innerText = '开始推理'
         }
 
     }
