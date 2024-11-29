@@ -18,15 +18,41 @@ export function ButtonController({stream, elmentId}: VideoPreviewProps) {
     }, [stream, elmentId]);
 
 
-    const videoElemnet = document.getElementById(elmentId) as HTMLVideoElement;
-    let timerHandle: number = 0;
+    const videoElement = document.getElementById(elmentId) as HTMLVideoElement;
 
 
     const cameraBuff: string[] = [];
     let inferenceStatus = false;
 
+    //定时器 const timerHandle
+    setInterval(() => {
+        if (!(videoElement instanceof HTMLVideoElement)) {
+            return;
+        }
 
-    const callApi = function (handle: number) {
+        const canvas = document.createElement('canvas');
+        // canvas.width = videoElemnet.videoWidth/2;
+        // canvas.height = videoElemnet.videoHeight/2;
+        canvas.width = 480;
+        canvas.height = 360;
+
+        const ctx = canvas.getContext('2d') as CanvasRenderingContext2D;
+        //打印 videoElemnet 的类型
+
+        ctx.drawImage(videoElement, 0, 0, canvas.width, canvas.height);
+        const dataURL = canvas.toDataURL('image/jpeg', 0.618);
+        // dataURL 有数据才加入数组
+        if (dataURL.length <= 'data:,'.length) {
+            return;
+        }
+        cameraBuff.push(dataURL);
+        if (cameraBuff.length > 2) {
+            cameraBuff.shift();
+        }
+    }, 1000)
+
+
+    const callApi = function () {
 
         const tips = document.getElementById('tips') as HTMLInputElement;
         const messages = {
@@ -67,14 +93,14 @@ export function ButtonController({stream, elmentId}: VideoPreviewProps) {
             ret.value = JSON.stringify(data.choices[0].message.content);
 
             // 根据状态继续回调
-            if (inferenceStatus && handle == timerHandle) {
-                callApi(handle);
+            if (inferenceStatus) {
+                callApi();
             }
         }).catch(err => {
             console.error(err)
             // 根据状态继续回调
-            if (inferenceStatus && handle == timerHandle) {
-                callApi(handle);
+            if (inferenceStatus) {
+                callApi();
             }
         });
     }
@@ -88,37 +114,12 @@ export function ButtonController({stream, elmentId}: VideoPreviewProps) {
         // 开始推理
         if (inferenceStatus) {
             btnText.innerText = '停止推理'
-            //定时器
-            timerHandle = setInterval(() => {
-                const canvas = document.createElement('canvas');
-                // canvas.width = videoElemnet.videoWidth/2;
-                // canvas.height = videoElemnet.videoHeight/2;
-                canvas.width = 480;
-                canvas.height = 360;
-
-                const ctx = canvas.getContext('2d') as CanvasRenderingContext2D;
-                ctx.drawImage(videoElemnet, 0, 0, canvas.width, canvas.height);
-                const dataURL = canvas.toDataURL('image/jpeg', 0.618);
-                // dataURL 有数据才加入数组
-                if (dataURL.length <= 'data:,'.length) {
-                    return;
-                }
-                cameraBuff.push(dataURL);
-                if (cameraBuff.length > 3) {
-                    cameraBuff.shift();
-                }
-            }, 1000)
-
-
             //开始调用api
-            callApi(timerHandle);
+            callApi();
         } else {
             btnText.innerText = '开始推理'
-            //停止调度器
-            if (timerHandle && timerHandle != 0) {
-                clearInterval(timerHandle);
-                timerHandle = 0;
-            }
+
+
         }
 
     }
