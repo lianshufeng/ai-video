@@ -1,6 +1,10 @@
 import {useEffect} from 'react';
 
 const ApiUrl = "https://vl.api.jpy.wang/compatible-mode/v1";
+// const ApiUrl = "https://dashscope.aliyuncs.com/compatible-mode/v1/chat/completions";
+const ApiKey = "sk-1111"
+const ApiModel = "qwen2-vl-7b-instruct"
+
 
 interface VideoPreviewProps {
     stream: MediaStream | null;
@@ -26,6 +30,7 @@ export function ButtonController({stream, elmentId}: VideoPreviewProps) {
 
         const tips = document.getElementById('tips') as HTMLInputElement;
         const messages = {
+            model: ApiModel,
             messages: [
                 {
                     "role": "user",
@@ -51,14 +56,15 @@ export function ButtonController({stream, elmentId}: VideoPreviewProps) {
             {
                 method: 'POST',
                 headers: {
-                    'Content-Type': 'application/json'
+                    'Content-Type': 'application/json',
+                    'Authorization': 'Bearer ' + ApiKey
                 },
                 body: JSON.stringify(messages)
             }
         ).then(async res => {
             const data = await res.json();
             const ret = document.getElementById("result") as HTMLTextAreaElement;
-            ret.value = JSON.stringify(data);
+            ret.value = JSON.stringify(data.choices[0].message.content);
 
             // 根据状态继续回调
             if (inferenceStatus && handle == timerHandle) {
@@ -85,11 +91,14 @@ export function ButtonController({stream, elmentId}: VideoPreviewProps) {
             //定时器
             timerHandle = setInterval(() => {
                 const canvas = document.createElement('canvas');
-                canvas.width = videoElemnet.videoWidth;
-                canvas.height = videoElemnet.videoHeight;
+                // canvas.width = videoElemnet.videoWidth/2;
+                // canvas.height = videoElemnet.videoHeight/2;
+                canvas.width = 480;
+                canvas.height = 360;
+
                 const ctx = canvas.getContext('2d') as CanvasRenderingContext2D;
                 ctx.drawImage(videoElemnet, 0, 0, canvas.width, canvas.height);
-                const dataURL = canvas.toDataURL('image/png');
+                const dataURL = canvas.toDataURL('image/jpeg', 0.618);
                 // dataURL 有数据才加入数组
                 if (dataURL.length <= 'data:,'.length) {
                     return;
