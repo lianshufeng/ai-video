@@ -1,18 +1,110 @@
 <!doctype html>
 <html lang="en">
-  <head>
-    <meta charset="UTF-8" />
-    <link rel="icon" type="image/svg+xml" href="/vite.svg" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<head>
+    <meta charset="UTF-8"/>
+    <link rel="icon" type="image/svg+xml" href="/vite.svg"/>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
     <title>AI - Video</title>
-  </head>
-  <body>
-    <div id="root"></div>
-    <script type="module" src="/src/main.tsx"></script>
-  </body>
-  <style>
+</head>
+<body>
+<div id="root"></div>
+<script type="module" src="/src/main.tsx"></script>
+
+<script type="application/javascript">
+    (() => {
+        const ApiUrl = "https://vl.api.jpy.wang/compatible-mode/v1";
+        // const ApiUrl = "https://dashscope.aliyuncs.com/compatible-mode/v1/chat/completions";
+        const ApiKey = "sk-1111"
+        const ApiModel = "qwen2-vl-7b-instruct"
+
+        const cameraBuff = [];
+        window.inferenceStatus = false;
+
+
+        //定时器 const timerHandle
+        setInterval(() => {
+            const videoElement = document.getElementById('ai-video')
+            if (!(videoElement instanceof HTMLVideoElement)) {
+                return;
+            }
+            const canvas = document.createElement('canvas');
+            canvas.width = 480;
+            canvas.height = 360;
+
+            const ctx = canvas.getContext('2d');
+
+            ctx.drawImage(videoElement, 0, 0, canvas.width, canvas.height);
+            const dataURL = canvas.toDataURL('image/jpeg', 0.618);
+            // dataURL 有数据才加入数组
+            if (dataURL.length <= 'data:,'.length) {
+                return;
+            }
+            cameraBuff.push(dataURL);
+            if (cameraBuff.length > 3) {
+                cameraBuff.shift();
+            }
+        }, 1000)
+
+
+        window.callApi = function () {
+            const tips = document.getElementById('tips');
+            const messages = {
+                model: ApiModel,
+                messages: [
+                    {
+                        "role": "user",
+                        "content": [],
+                    }
+                ]
+            }
+
+            if (cameraBuff && cameraBuff.length > 0) {
+                messages.messages[0].content.push({
+                    fps: 1.0,
+                    type: "video",
+                    video: cameraBuff,
+                })
+            }
+            messages.messages[0].content.push({
+                "type": "text",
+                "text": tips.value
+            })
+
+            window.fetch(
+                ApiUrl,
+                {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': 'Bearer ' + ApiKey
+                    },
+                    body: JSON.stringify(messages)
+                }
+            ).then(async res => {
+                const data = await res.json();
+                const ret = document.getElementById("result")
+                ret.value = JSON.stringify(data.choices[0].message.content);
+
+                // 根据状态继续回调
+                if (inferenceStatus) {
+                    callApi();
+                }
+            }).catch(err => {
+                console.error(err)
+                // 根据状态继续回调
+                if (inferenceStatus) {
+                    callApi();
+                }
+            });
+        }
+    })()
+
+</script>
+
+</body>
+<style>
     .max-w-md {
-      max-width: 600px;
+        max-width: 600px;
     }
-  </style>
+</style>
 </html>

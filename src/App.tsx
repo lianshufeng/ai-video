@@ -6,7 +6,7 @@ import {useCamera} from './hooks/useCamera';
 
 function App() {
     const {devices, selectedDevice, stream, setSelectedDevice} = useCamera();
-    const [prompt, setPrompt] = useState('中文描述有什么内容');
+    const [prompt, setPrompt] = useState('中文描述此视频');
     const [notes, setNotes] = useState('');
 
     const videoId = 'ai-video'
